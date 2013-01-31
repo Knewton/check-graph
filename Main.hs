@@ -8,7 +8,7 @@ import           Data.Aeson.TH
 import           Data.Char
 import qualified Data.ByteString.Lazy as L
 import qualified Network.HTTP.Conduit as C
-import           Options.Applicative
+import           Options.Applicative  hiding (value)
 import           System.Exit
 
 -----------
