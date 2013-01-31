@@ -50,12 +50,12 @@ graphiteUrl (Args{..}) =
 checkMetrics :: Args -> Maybe [Metric] -> IO ()
 checkMetrics args@(Args {..}) (Just metrics) = do
   if all (checkValues args . values . metricDatapoints) metrics
-    then do print $ "OK: Graphite values present are within margins"
+    then do putStrLn $ "OK: Graphite values that are present are OK"
             exitSuccess
-    else do print $ "CRITICAL: target " ++ graphiteUrl args
+    else do putStrLn $ "CRITICAL: " ++ argTarget
             exitFailure
-checkMetrics args Nothing = do
-  putStrLn $ "CRITICAL: no data " ++ graphiteUrl args
+checkMetrics Args {..} Nothing = do
+  putStrLn $ "CRITICAL: no data " ++ argTarget
   exitFailure
 
 checkValues :: Args -> [Double] -> Bool
