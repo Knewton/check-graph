@@ -53,10 +53,10 @@ checkMetrics args@(Args {..}) (Just metrics) = do
     then do putStrLn $ "OK: Graphite values that are present are OK"
             exitSuccess
     else do putStrLn $ "CRITICAL: " ++ argTarget
-            exitFailure
+            exitWith $ ExitFailure 2
 checkMetrics Args {..} Nothing = do
   putStrLn $ "CRITICAL: no data " ++ argTarget
-  exitFailure
+  exitWith $ ExitFailure 2
 
 checkValues :: Args -> [Double] -> Bool
 checkValues (Args {..}) = all (flip (operator argOperator) argValue)
