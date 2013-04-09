@@ -1,0 +1,59 @@
+#+TITLE: Check Graph
+#+STARTUP: content odd hidestars hideblocks
+
+* Dependencies (Nix)
+
+*** Runtime
+
+    #+begin_src sh :tangle ./nix-build.sh
+      sudo -i nix-env -p /nix/var/nix/profiles/check-graph \
+          -i nix glibc gmp zlib
+    #+end_src
+
+***** TODO Exporting (freezing) a runtime closure with nix-store
+
+*** Build Inputs
+
+    #+begin_src sh :tangle ./nix-build.sh
+      sudo -i nix-env -p /nix/var/nix/profiles/check-graph-dev -iA \
+          nixpkgs.haskellPackages_ghc762.aeson                     \
+          nixpkgs.haskellPackages_ghc762.cabalInstall              \
+          nixpkgs.haskellPackages_ghc762.ghc                       \
+          nixpkgs.haskellPackages_ghc762.httpConduit               \
+          nixpkgs.haskellPackages_ghc762.optparseApplicative       \
+          nixpkgs.haskellPackages_ghc762.transformers              \
+          nixpkgs.llvm                                             \
+          nixpkgs.nix                                              \
+          nixpkgs.patchelf
+    #+end_src
+
+* Compile
+
+  Statically link everything except glibc, gmp & zlib 
+
+  #+begin_src sh :tangle ./nix-build.sh
+    CABAL_VER=$(cabal info .|head -n 1|cut -d ' ' -f2-2|rev|cut -d '-' -f1|rev)
+    GIT_DATE=$(git log -n 1 --date=short --pretty=format:%cd)
+    GIT_VER=$(echo ${GIT_DATE}|awk '{gsub(/[\-]/,"")}1')
+    VERSION=${CABAL_VER}.${GIT_VER}
+    nix-env -S /nix/var/nix/profiles/check-graph-dev
+    cabal clean
+    cabal configure                                                    \
+        --extra-include-dirs=/nix/var/nix/profiles/check-graph/include \
+        --extra-lib-dirs=/nix/var/nix/profiles/check-graph/lib         \
+        --ghc-options='-O2 -fllvm -static -optl-pthread'
+    cabal build
+    mv dist/build/check_graph/check_graph ./
+    patchelf                                                                           \
+        --set-interpreter /nix/var/nix/profiles/check-graph/lib64/ld-linux-x86-64.so.2 \
+        check_graph
+    patchelf                                                                                      \
+        --set-rpath /nix/var/nix/profiles/check-graph/lib:/nix/var/nix/profiles/check-graph/lib64 \
+        check_graph
+  #+end_src
+
+* TODO Create nix expr for check-graph & export the whole thing with
+
+  #+begin_src sh
+    nix-store --export /nix/store/XXX-check-graph $(nix-env -qR /nix/store/XXX-check-graph)
+  #+end_src
