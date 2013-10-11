@@ -7,7 +7,7 @@
 
     #+begin_src sh :tangle ./nix-build.sh
       sudo -i nix-env -p /nix/var/nix/profiles/check-graph \
-          -i nix glibc gmp zlib
+          -i glibc gmp zlib
     #+end_src
 
 ***** TODO Exporting (freezing) a runtime closure with nix-store
@@ -50,10 +50,4 @@
     patchelf                                                                                      \
         --set-rpath /nix/var/nix/profiles/check-graph/lib:/nix/var/nix/profiles/check-graph/lib64 \
         check_graph
-  #+end_src
-
-* TODO Create nix expr for check-graph & export the whole thing with
-
-  #+begin_src sh
-    nix-store --export /nix/store/XXX-check-graph $(nix-env -qR /nix/store/XXX-check-graph)
   #+end_src
