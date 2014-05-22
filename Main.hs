@@ -29,8 +29,9 @@ data Metric = Metric { metricTarget     :: String
 data Datapoint = Datapoint (Maybe Double) Integer
                deriving (Show, Eq)
 
-$( deriveJSON ((map toLower) . drop 6) ''Metric )
-$( deriveJSON id                       ''Datapoint )
+-- JSON
+$( deriveJSON defaultOptions { fieldLabelModifier = (map toLower) . drop 6 } ''Metric )
+$( deriveJSON defaultOptions ''Datapoint )
 
 -----------
 -- CHECK --
