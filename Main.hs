@@ -97,4 +97,4 @@ operator "<=" = (<=)
 operator "==" = (==)
 operator ">"  = (>)
 operator ">=" = (>=)
-operator _    = error "FIXME: use Parser with optparse-applicative"
+operator _    = error "ERROR: operators are <, <=, ==, > or >="
