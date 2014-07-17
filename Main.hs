@@ -3,12 +3,14 @@
 {-# LANGUAGE RecordWildCards   #-}
 {-# LANGUAGE TemplateHaskell   #-}
 
-import qualified Data.Aeson           as A
+import qualified Data.Aeson                as A
 import           Data.Aeson.TH
+import qualified Data.ByteString.Lazy      as L
+import qualified Data.ByteString.Lazy.UTF8 as L
 import           Data.Char
-import qualified Data.ByteString.Lazy as L
-import qualified Network.HTTP.Conduit as C
-import           Options.Applicative  hiding (value)
+import           Data.List
+import qualified Network.HTTP.Conduit      as C
+import           Options.Applicative       hiding (value)
 import           System.Exit
 
 -----------
@@ -50,14 +52,20 @@ graphiteUrl (Args{..}) =
 
 checkMetrics :: Args -> Maybe [Metric] -> IO ()
 checkMetrics args@(Args {..}) (Just metrics) = do
-  if all (checkValues args . values . metricDatapoints) metrics
-    then do putStrLn $ "OK: Graphite values that are present are OK"
-            exitSuccess
-    else do putStrLn $ "CRITICAL: " ++ argTarget
-            exitWith $ ExitFailure 2
+  case filter (badMetricMatch args) metrics of
+    []         -> do
+      putStrLn $ "OK: Graphite values that are present are OK"
+      exitSuccess
+    badMetrics -> do
+      putStrLn $ "CRITICAL: " ++
+        intercalate " " (map (L.toString . A.encode) badMetrics)
+      exitWith $ ExitFailure 2
 checkMetrics Args {..} Nothing = do
   putStrLn $ "CRITICAL: no data " ++ argTarget
   exitWith $ ExitFailure 2
+
+badMetricMatch :: Args -> Metric -> Bool
+badMetricMatch args = not . checkValues args . values . metricDatapoints
 
 checkValues :: Args -> [Double] -> Bool
 checkValues (Args {..}) = all (flip (operator argOperator) argValue)
