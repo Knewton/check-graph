@@ -57,7 +57,8 @@ checkMetrics args@(Args {..}) (Just metrics) = do
       putStrLn $ "OK: Graphite values that are present are OK"
       exitSuccess
     badMetrics -> do
-      putStrLn $ "CRITICAL: " ++ intercalate " " (map metricTarget badMetrics)
+      putStrLn $ "CRITICAL: " ++
+        intercalate " " (map (L.toString . A.encode) badMetrics)
       exitWith $ ExitFailure 2
 checkMetrics Args {..} Nothing = do
   putStrLn $ "CRITICAL: no data " ++ argTarget
