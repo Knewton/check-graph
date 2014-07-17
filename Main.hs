@@ -3,13 +3,14 @@
 {-# LANGUAGE RecordWildCards   #-}
 {-# LANGUAGE TemplateHaskell   #-}
 
-import qualified Data.Aeson           as A
+import qualified Data.Aeson                as A
 import           Data.Aeson.TH
-import           Data.List
-import qualified Data.ByteString.Lazy as L
+import qualified Data.ByteString.Lazy      as L
+import qualified Data.ByteString.Lazy.UTF8 as L
 import           Data.Char
-import qualified Network.HTTP.Conduit as C
-import           Options.Applicative  hiding (value)
+import           Data.List
+import qualified Network.HTTP.Conduit      as C
+import           Options.Applicative       hiding (value)
 import           System.Exit
 
 -----------

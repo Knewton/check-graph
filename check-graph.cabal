@@ -20,3 +20,4 @@ executable              check_graph
                       , http-conduit
                       , optparse-applicative
                       , transformers
+                      , utf8-string
