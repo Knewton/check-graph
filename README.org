@@ -23,6 +23,7 @@
           nixpkgs.haskellPackages.optparseApplicative              \
           nixpkgs.haskellPackages.transformers_0_4_1_0             \
           nixpkgs.llvm                                             \
+          nixpkgs.nix                                              \
           nixpkgs.patchelf
     #+end_src
 
