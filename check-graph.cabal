@@ -1,5 +1,5 @@
 name:                   check-graph
-version:                0.1.0
+version:                0.2.0
 synopsis:               CLI for checking graphite (can be used with Nagios)
 homepage:               http://github.com/knewton/check-graph
 license:                OtherLicense
