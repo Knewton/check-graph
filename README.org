@@ -16,27 +16,27 @@
 
     #+begin_src sh :tangle ./nix-build.sh
       sudo -i nix-env -p /nix/var/nix/profiles/check-graph-dev -iA \
-          nixpkgs.haskellPackages_ghc762.aeson                     \
-          nixpkgs.haskellPackages_ghc762.cabalInstall              \
-          nixpkgs.haskellPackages_ghc762.ghc                       \
-          nixpkgs.haskellPackages_ghc762.httpConduit               \
-          nixpkgs.haskellPackages_ghc762.optparseApplicative       \
-          nixpkgs.haskellPackages_ghc762.transformers              \
+          nixpkgs.haskellPackages.ghc                              \
+          nixpkgs.haskellPackages.aeson                            \
+          nixpkgs.haskellPackages.cabalInstall                     \
+          nixpkgs.haskellPackages.httpConduit                      \
+          nixpkgs.haskellPackages.optparseApplicative              \
+          nixpkgs.haskellPackages.transformers_0_4_1_0             \
           nixpkgs.llvm                                             \
-          nixpkgs.nix                                              \
           nixpkgs.patchelf
     #+end_src
 
 * Compile
 
-  Statically link everything except glibc, gmp & zlib 
+  Statically link everything except glibc, gmp & zlib
 
   #+begin_src sh :tangle ./nix-build.sh
+    nix-env -S /nix/var/nix/profiles/check-graph-dev
+    cabal update
     CABAL_VER=$(cabal info .|head -n 1|cut -d ' ' -f2-2|rev|cut -d '-' -f1|rev)
     GIT_DATE=$(git log -n 1 --date=short --pretty=format:%cd)
     GIT_VER=$(echo ${GIT_DATE}|awk '{gsub(/[\-]/,"")}1')
     VERSION=${CABAL_VER}.${GIT_VER}
-    nix-env -S /nix/var/nix/profiles/check-graph-dev
     cabal clean
     cabal configure                                                    \
         --extra-include-dirs=/nix/var/nix/profiles/check-graph/include \
