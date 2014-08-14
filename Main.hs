@@ -3,6 +3,7 @@
 {-# LANGUAGE RecordWildCards   #-}
 {-# LANGUAGE TemplateHaskell   #-}
 
+import           Acme.LookOfDisapproval
 import qualified Data.Aeson                as A
 import           Data.Aeson.TH
 import qualified Data.ByteString.Lazy      as L
@@ -106,4 +107,4 @@ operator "<=" = (<=)
 operator "==" = (==)
 operator ">"  = (>)
 operator ">=" = (>=)
-operator _    = error "ERROR: operators are <, <=, ==, > or >="
+operator _    = ಠ_ಠ "ERROR: operators are <, <=, ==, > or >="
