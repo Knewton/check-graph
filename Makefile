@@ -41,6 +41,4 @@ distclean: clean
 	clean \
 	distclean \
 	docker \
-	image \
-	knewton/check-graph \
-	knewton/ubuntu
+	install
