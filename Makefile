@@ -34,7 +34,7 @@ clean:
 	@sudo rm -rf .cabal-sandbox cabal.sandbox.config dist
 
 distclean: clean
-	@sudo rm -rf chroot
+	@sudo rm -rf chroot .knewton*
 
 .PHONY: \
 	all \
