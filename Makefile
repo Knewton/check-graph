@@ -24,7 +24,7 @@ chroot:
 	@strip .cabal-sandbox/bin/check-graph
 
 install: | .knewton_check-graph_dev
-	@docker run -v $(PWD):/usr/src/check-graph knewton/check-graph:dev \
+	@docker run -v $(PWD):/usr/local/src/check-graph knewton/check-graph:dev \
 		/usr/bin/make .cabal-sandbox/bin/check-graph
 
 docker: | install .knewton_check-graph_lib
