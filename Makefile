@@ -3,7 +3,7 @@ all: docker
 chroot:
 	@sudo -E debootstrap --arch=amd64 --variant=minbase trusty chroot
 
-.knewton_ubuntu_trusty:
+.knewton_ubuntu_trusty: | chroot
 	@sudo -E tar c -C chroot . \
 		| docker import - knewton/ubuntu:trusty \
 		| tee .knewton_ubuntu_trusty
