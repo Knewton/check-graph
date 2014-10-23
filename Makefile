@@ -13,7 +13,7 @@ chroot:
 	@docker build --rm=true --tag=knewton/check-graph:lib ./etc/docker/lib/ \
 		| tee .knewton_check-graph_lib
 
-.knewton_check-graph_dev:
+.knewton_check-graph_dev: | .knewton_check-graph_lib
 	@docker build --rm=false --tag=knewton/check-graph:dev ./etc/docker/dev/ \
 		| tee .knewton_check-graph_dev
 
