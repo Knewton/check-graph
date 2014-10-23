@@ -31,10 +31,10 @@ docker: | install .knewton_check-graph_lib
 	@docker build --rm=true --tag=knewton/check-graph .
 
 clean:
-	@sudo rm -rf .cabal-sandbox/bin/check-graph
+	@sudo rm -rf .cabal-sandbox cabal.sandbox.config dist
 
 distclean: clean
-	@sudo rm -rf *cabal*sandbox .knewton* chroot
+	@sudo rm -rf chroot
 
 .PHONY: \
 	all \
