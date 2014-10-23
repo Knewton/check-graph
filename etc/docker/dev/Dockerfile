@@ -20,5 +20,5 @@ RUN apt-get install -y \
 ENV PATH /opt/ghc/7.8.3/bin:/opt/cabal/1.20/bin:/opt/alex/3.1.3/bin:/opt/happy/1.19.4/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 # PROJECT
-VOLUME /usr/src/check-graph
-WORKDIR /usr/src/check-graph
+VOLUME /usr/local/src/check-graph
+WORKDIR /usr/local/src/check-graph
