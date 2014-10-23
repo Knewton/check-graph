@@ -1,6 +1,6 @@
 #-*- mode:conf; -*-
 
-FROM knewton/ubuntu:trusty
+FROM docker.knewton.net/knewton/ubuntu:trusty
 MAINTAINER Tim Dysinger <tim@knewton.com>
 
 RUN apt-get update

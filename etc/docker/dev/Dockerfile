@@ -1,6 +1,6 @@
 #-*- mode:conf; -*-
 
-FROM knewton/check-graph:lib
+FROM docker.knewton.net/knewton/check-graph:lib
 MAINTAINER Tim Dysinger <tim@knewton.com>
 
 # HASKELL
