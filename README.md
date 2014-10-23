@@ -1,10 +1,8 @@
-# Compile
+# Build Binaries (x86_64 Executable & Docker Image)
 
-    docker build -t knewton/check-graph-dev .
-    docker run -v $PWD:/project knewton/check-graph-dev \
-        cp /usr/src/graph-check/dist/build/check_graph/check_graph /project/
+    make
 
-# Runtime Dependencies
+## Runtime Dependencies
 
     $ ldd /usr/src/graph-check/dist/build/check_graph/check_graph
     linux-vdso.so.1 =>  (0x00007ffff8518000)
