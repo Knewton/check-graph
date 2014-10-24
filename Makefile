@@ -3,27 +3,24 @@ all: docker
 chroot:
 	@sudo -E debootstrap --arch=amd64 --variant=minbase trusty chroot
 
-.knewton_ubuntu_trusty: | chroot
+docker.knewton.net/knewton/ubuntu: | chroot
 	@sudo -E tar c -C chroot . \
-		| docker import - docker.knewton.net/knewton/ubuntu:trusty \
-		| tee .knewton_ubuntu_trusty
+		| docker import - docker.knewton.net/knewton/ubuntu:trusty
 	@docker tag \
 		docker.knewton.net/knewton/ubuntu:trusty \
 		docker.knewton.net/knewton/ubuntu
 
-.knewton_check-graph_lib:
+docker.knewton.net/knewton/check-graph_lib:
 	@docker build \
 		--rm=true \
 		--tag=docker.knewton.net/knewton/check-graph:lib \
-		./etc/docker/lib/ \
-		| tee .knewton_check-graph_lib
+		./etc/docker/lib/
 
-.knewton_check-graph_dev: | .knewton_check-graph_lib
+docker.knewton.net/knewton/check-graph_dev:
 	@docker build \
 		--rm=false \
 		--tag=docker.knewton.net/knewton/check-graph:dev \
-		./etc/docker/dev/ \
-		| tee .knewton_check-graph_dev
+		./etc/docker/dev/
 
 .cabal-sandbox/bin/check-graph:
 	@cabal sandbox init
@@ -50,4 +47,7 @@ distclean: clean
 	clean \
 	distclean \
 	docker \
+	docker.knewton.net/knewton/check-graph_dev \
+	docker.knewton.net/knewton/check-graph_lib \
+	docker.knewton.net/knewton/ubuntu \
 	install
