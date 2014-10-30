@@ -107,4 +107,4 @@ operator "<=" = (<=)
 operator "==" = (==)
 operator ">"  = (>)
 operator ">=" = (>=)
-operator _    = ಠ_ಠ "ERROR: operators are <, <=, ==, > or >="
+operator _    = ಠ_ಠ "The operator should be one of <, <=, ==, > or >="
