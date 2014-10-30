@@ -28,12 +28,13 @@ docker.knewton.net/knewton/check-graph_dev:
 	@cabal install
 	@strip .cabal-sandbox/bin/check-graph
 
-install: | .knewton_check-graph_dev
-	@docker run -v $(PWD):/usr/local/src/check-graph \
+install:
+	@docker run \
+		--volume=$(PWD):/usr/local/src/check-graph \
 		docker.knewton.net/knewton/check-graph:dev \
 		/usr/bin/make .cabal-sandbox/bin/check-graph
 
-docker: | install .knewton_check-graph_lib
+docker: | install
 	@docker build --tag=docker.knewton.net/knewton/check-graph .
 
 clean:
