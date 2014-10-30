@@ -18,7 +18,10 @@ executable              check_graph
                       , acme-lookofdisapproval
                       , aeson
                       , bytestring
+                      , http-client
                       , http-conduit
+                      , http-types
+                      , lifted-base
                       , optparse-applicative
                       , transformers
                       , utf8-string

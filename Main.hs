@@ -4,13 +4,17 @@
 {-# LANGUAGE TemplateHaskell   #-}
 
 import           Acme.LookOfDisapproval
+import           Control.Exception.Lifted
+import           Control.Monad.IO.Class
 import qualified Data.Aeson                as A
 import           Data.Aeson.TH
 import qualified Data.ByteString.Lazy      as L
 import qualified Data.ByteString.Lazy.UTF8 as L
 import           Data.Char
 import           Data.List
+import           Network.HTTP.Client
 import qualified Network.HTTP.Conduit      as C
+import           Network.HTTP.Types
 import           Options.Applicative       hiding (value)
 import           System.Exit
 
@@ -44,11 +48,20 @@ check :: Args -> IO ()
 check args = graphiteQuery args >>= checkMetrics args . A.decode
 
 graphiteQuery :: Args -> IO L.ByteString
-graphiteQuery args = C.simpleHttp (graphiteUrl args) >>= return
+graphiteQuery args@(Args {..}) =
+  let fallback = "http://grafana.knewton.net:8888"
+      timeout = 10 * 100000 -- timeout in microseconds
+      query url = withManager defaultManagerSettings $ \ mgr -> do
+        req <- parseUrl (graphiteUrl url args)
+        httpLbs (req { responseTimeout = Just timeout }) mgr
+          >>= return . responseBody
+      oops :: SomeException -> IO L.ByteString
+      oops e = query fallback
+  in handle oops $ query argURL
 
-graphiteUrl:: Args -> String
-graphiteUrl (Args{..}) =
-  argURL ++ "/render/?target=" ++ argTarget
+graphiteUrl:: String -> Args -> String
+graphiteUrl url (Args{..}) =
+  url ++ "/render/?target=" ++ argTarget
   ++ "&from=-" ++ show argMinutes ++ "min&format=json"
 
 checkMetrics :: Args -> Maybe [Metric] -> IO ()
