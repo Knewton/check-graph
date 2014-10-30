@@ -15,14 +15,16 @@ import           Data.List
 import           Network.HTTP.Client
 import qualified Network.HTTP.Conduit      as C
 import           Network.HTTP.Types
-import           Options.Applicative       hiding (value)
+import           Options.Applicative
 import           System.Exit
 
 -----------
 -- TYPES --
 -----------
 
-data Args = Args { argURL      :: String
+data Args = Args { argFallback :: String
+                 , argTimeout  :: Int
+                 , argURL      :: String
                  , argTarget   :: String
                  , argOperator :: String
                  , argValue    :: Double
@@ -49,14 +51,12 @@ check args = graphiteQuery args >>= checkMetrics args . A.decode
 
 graphiteQuery :: Args -> IO L.ByteString
 graphiteQuery args@(Args {..}) =
-  let fallback = "http://grafana.knewton.net:8888"
-      timeout = 10 * 100000 -- timeout in microseconds
-      query url = withManager defaultManagerSettings $ \ mgr -> do
+  let query url = withManager defaultManagerSettings $ \ mgr -> do
         req <- parseUrl (graphiteUrl url args)
-        httpLbs (req { responseTimeout = Just timeout }) mgr
+        httpLbs (req { responseTimeout = Just (argTimeout * 100000) }) mgr
           >>= return . responseBody
       oops :: SomeException -> IO L.ByteString
-      oops e = query fallback
+      oops e = query argFallback
   in handle oops $ query argURL
 
 graphiteUrl:: String -> Args -> String
@@ -108,9 +108,19 @@ argsParserInfo =
 argsParser :: Parser Args
 argsParser =
   Args
-  <$> argument str  ( metavar "URL" )
-  <*> argument str  ( metavar "TARGET" )
-  <*> argument str  ( metavar "OPERATOR" )
+  <$> option auto ( short 'f'
+                    <> long "fallback"
+                    <> metavar "URL"
+                    <> value "http://grafana.knewton.net:8888"
+                    <> showDefault )
+  <*> option auto ( short 't'
+                    <> long "timeout"
+                    <> metavar "SECONDS"
+                    <> value 10
+                    <> showDefault )
+  <*> argument str ( metavar "URL" )
+  <*> argument str ( metavar "TARGET" )
+  <*> argument str ( metavar "OPERATOR" )
   <*> argument auto ( metavar "VALUE" )
   <*> argument auto ( metavar "MINUTES" )
 
