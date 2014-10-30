@@ -5,7 +5,6 @@
 
 import           Acme.LookOfDisapproval
 import           Control.Exception.Lifted
-import           Control.Monad.IO.Class
 import qualified Data.Aeson                as A
 import           Data.Aeson.TH
 import qualified Data.ByteString.Lazy      as L
@@ -13,8 +12,6 @@ import qualified Data.ByteString.Lazy.UTF8 as L
 import           Data.Char
 import           Data.List
 import           Network.HTTP.Client
-import qualified Network.HTTP.Conduit      as C
-import           Network.HTTP.Types
 import           Options.Applicative
 import           System.Exit
 
@@ -56,7 +53,7 @@ graphiteQuery args@(Args {..}) =
         httpLbs (req { responseTimeout = Just (argTimeout * 100000) }) mgr
           >>= return . responseBody
       oops :: SomeException -> IO L.ByteString
-      oops e = query argFallback
+      oops _ = query argFallback
   in handle oops $ query argURL
 
 graphiteUrl:: String -> Args -> String

@@ -19,8 +19,6 @@ executable              check-graph
                       , aeson
                       , bytestring
                       , http-client
-                      , http-conduit
-                      , http-types
                       , lifted-base
                       , optparse-applicative
                       , transformers
