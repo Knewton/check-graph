@@ -15,7 +15,6 @@ executable              check-graph
   ghc-options:          -Wall
   main-is:              Main.hs
   build-depends:        base >=4.5
-                      , acme-lookofdisapproval
                       , aeson
                       , bytestring
                       , http-client

@@ -3,7 +3,6 @@
 {-# LANGUAGE RecordWildCards   #-}
 {-# LANGUAGE TemplateHaskell   #-}
 
-import           Acme.LookOfDisapproval
 import           Control.Exception.Lifted
 import qualified Data.Aeson                as A
 import           Data.Aeson.TH
@@ -125,4 +124,4 @@ operator "<=" = (<=)
 operator "==" = (==)
 operator ">"  = (>)
 operator ">=" = (>=)
-operator _    = ಠ_ಠ "The operator should be one of <, <=, ==, > or >="
+operator _    = error "The operator should be one of <, <=, ==, > or >="
