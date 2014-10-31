@@ -105,16 +105,14 @@ argsParserInfo =
 argsParser :: Parser Args
 argsParser =
   Args
-  <$> option auto ( short 'f'
-                    <> long "fallback"
-                    <> metavar "URL"
-                    <> value "http://grafana.knewton.net:8888"
-                    <> showDefault )
+  <$> strOption ( short 'f'
+                  <> long "fallback"
+                  <> metavar "URL"
+                  <> value "http://grafana-api.knewton.net:8888" )
   <*> option auto ( short 't'
                     <> long "timeout"
                     <> metavar "SECONDS"
-                    <> value 10
-                    <> showDefault )
+                    <> value 10 )
   <*> argument str ( metavar "URL" )
   <*> argument str ( metavar "TARGET" )
   <*> argument str ( metavar "OPERATOR" )
