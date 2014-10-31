@@ -1,53 +1,73 @@
-all: docker
+# +--------------------+
+# |                    |      ARTIFACT
+# |     BUILD IMAGE    | +-------+
+# |                    |         |
+# +--------------------+         |
+# |                    |         |
+# |                    |         |
+# |                    |         |
+# |                    |         |
+# |      DEV IMAGE     |         |
+# |                    |         v
+# |                    +-------------------+
+# |                    |                   |
+# |                    |   RUNTIME IMAGE   |
+# |                    |                   |
+# +--------------------+-------------------+
+# |                                        |
+# |                LIB IMAGE               |
+# |                                        |
+# +----------------------------------------+
 
-chroot:
-	@sudo -E debootstrap --arch=amd64 --variant=minbase trusty chroot
+all: docker-run
 
-docker.knewton.net/knewton/ubuntu: | chroot
-	@sudo -E tar c -C chroot . \
-		| docker import - docker.knewton.net/knewton/ubuntu:trusty
-	@docker tag \
-		docker.knewton.net/knewton/ubuntu:trusty \
-		docker.knewton.net/knewton/ubuntu
-
-docker.knewton.net/knewton/check-graph_lib:
+# LIB DOCKER IMAGE: RUNTIME FOR THIS PROJECT ADDED ON TOP "UBUNTU"
+docker-lib:
+	@ln -sf ./etc/docker/lib/Dockerfile .
 	@docker build \
-		--rm=true \
 		--tag=docker.knewton.net/knewton/check-graph:lib \
-		./etc/docker/lib/
+		$(PWD)
 
-docker.knewton.net/knewton/check-graph_dev:
+# DEV DOCKER IMAGE: DEV TOOLS FOR THIS PROJECT ADDED ON TOP "LIB"
+docker-dev:
+	@ln -sf ./etc/docker/dev/Dockerfile .
 	@docker build \
 		--rm=false \
 		--tag=docker.knewton.net/knewton/check-graph:dev \
-		./etc/docker/dev/
+		$(PWD)
 
-.cabal-sandbox/bin/check-graph:
-	@cabal sandbox init
-	@cabal update
-	@cabal install
-	@strip .cabal-sandbox/bin/check-graph
+# BLD DOCKER IMAGE: BUILD/TEST THIS PROJECT ON TOP OUR "DEV" IMAGE
+docker-bld:
+	@ln -sf ./etc/docker/bld/Dockerfile .
+	@docker build \
+		--rm=false \
+		--tag=docker.knewton.net/knewton/check-graph:bld \
+		$(PWD)
 
-install: | .knewton_check-graph_dev
-	@docker run -v $(PWD):/usr/local/src/check-graph \
-		docker.knewton.net/knewton/check-graph:dev \
-		/usr/bin/make .cabal-sandbox/bin/check-graph
+# EXTRACT BINARY: COPY THE BINARY EXE FROM OUR PROJECT "BLD" IMAGE
+check-graph: docker-bld
+	@docker run \
+		--volume=$(TMP):/host \
+		docker.knewton.net/knewton/check-graph:bld \
+		cp /usr/local/bin/check-graph /host/
+	@cp $(TMP)/check-graph .
 
-docker: | install .knewton_check-graph_lib
-	@docker build --tag=docker.knewton.net/knewton/check-graph .
+# RUN DOCKER IMAGE: ADD THE PROJECT'S BINARY ON TOP OUR "LIB" IMAGE
+docker-run: check-graph
+	@ln -sf ./etc/docker/run/Dockerfile .
+	@docker build \
+		--tag=docker.knewton.net/knewton/check-graph \
+		$(PWD)
 
 clean:
-	@sudo rm -rf .cabal-sandbox cabal.sandbox.config dist
-
-distclean: clean
-	@sudo rm -rf chroot .knewton*
+	@rm -f Dockerfile check-graph
 
 .PHONY: \
 	all \
 	clean \
-	distclean \
-	docker \
-	docker.knewton.net/knewton/check-graph_dev \
-	docker.knewton.net/knewton/check-graph_lib \
-	docker.knewton.net/knewton/ubuntu \
-	install
+	docker-bld \
+	docker-dev \
+	docker-lib \
+	docker-run
+
+TMP := $(shell mktemp -d)

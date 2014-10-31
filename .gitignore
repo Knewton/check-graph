@@ -1,7 +1,5 @@
-*cabal*sandbox*
+*chroot*
 .DS_Store
 .git
 .gitignore
-.knewton*
-chroot
-dist
+/Dockerfile

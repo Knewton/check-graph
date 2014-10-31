@@ -3,22 +3,24 @@
 {-# LANGUAGE RecordWildCards   #-}
 {-# LANGUAGE TemplateHaskell   #-}
 
-import           Acme.LookOfDisapproval
+import           Control.Exception.Lifted
 import qualified Data.Aeson                as A
 import           Data.Aeson.TH
 import qualified Data.ByteString.Lazy      as L
 import qualified Data.ByteString.Lazy.UTF8 as L
 import           Data.Char
 import           Data.List
-import qualified Network.HTTP.Conduit      as C
-import           Options.Applicative       hiding (value)
+import           Network.HTTP.Client
+import           Options.Applicative
 import           System.Exit
 
 -----------
 -- TYPES --
 -----------
 
-data Args = Args { argURL      :: String
+data Args = Args { argFallback :: String
+                 , argTimeout  :: Int
+                 , argURL      :: String
                  , argTarget   :: String
                  , argOperator :: String
                  , argValue    :: Double
@@ -44,11 +46,18 @@ check :: Args -> IO ()
 check args = graphiteQuery args >>= checkMetrics args . A.decode
 
 graphiteQuery :: Args -> IO L.ByteString
-graphiteQuery args = C.simpleHttp (graphiteUrl args) >>= return
+graphiteQuery args@(Args {..}) =
+  let query url = withManager defaultManagerSettings $ \ mgr -> do
+        req <- parseUrl (graphiteUrl url args)
+        httpLbs (req { responseTimeout = Just (argTimeout * 100000) }) mgr
+          >>= return . responseBody
+      oops :: SomeException -> IO L.ByteString
+      oops _ = query argFallback
+  in handle oops $ query argURL
 
-graphiteUrl:: Args -> String
-graphiteUrl (Args{..}) =
-  argURL ++ "/render/?target=" ++ argTarget
+graphiteUrl:: String -> Args -> String
+graphiteUrl url (Args{..}) =
+  url ++ "/render/?target=" ++ argTarget
   ++ "&from=-" ++ show argMinutes ++ "min&format=json"
 
 checkMetrics :: Args -> Maybe [Metric] -> IO ()
@@ -95,9 +104,17 @@ argsParserInfo =
 argsParser :: Parser Args
 argsParser =
   Args
-  <$> argument str  ( metavar "URL" )
-  <*> argument str  ( metavar "TARGET" )
-  <*> argument str  ( metavar "OPERATOR" )
+  <$> strOption ( short 'f'
+                  <> long "fallback"
+                  <> metavar "URL"
+                  <> value "http://grafana-api.knewton.net:8888" )
+  <*> option auto ( short 't'
+                    <> long "timeout"
+                    <> metavar "SECONDS"
+                    <> value 10 )
+  <*> argument str ( metavar "URL" )
+  <*> argument str ( metavar "TARGET" )
+  <*> argument str ( metavar "OPERATOR" )
   <*> argument auto ( metavar "VALUE" )
   <*> argument auto ( metavar "MINUTES" )
 
@@ -107,4 +124,4 @@ operator "<=" = (<=)
 operator "==" = (==)
 operator ">"  = (>)
 operator ">=" = (>=)
-operator _    = ಠ_ಠ "ERROR: operators are <, <=, ==, > or >="
+operator _    = error "The operator should be one of <, <=, ==, > or >="
