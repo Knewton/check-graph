@@ -1,59 +1,73 @@
-docker: docker-run
+# +--------------------+
+# |                    |      ARTIFACT
+# |     BUILD IMAGE    | +-------+
+# |                    |         |
+# +--------------------+         |
+# |                    |         |
+# |                    |         |
+# |                    |         |
+# |                    |         |
+# |      DEV IMAGE     |         |
+# |                    |         v
+# |                    +-------------------+
+# |                    |                   |
+# |                    |   RUNTIME IMAGE   |
+# |                    |                   |
+# +--------------------+-------------------+
+# |                                        |
+# |                LIB IMAGE               |
+# |                                        |
+# +----------------------------------------+
 
-docker-chroot:
-	@sudo -E debootstrap --arch=amd64 --variant=minbase trusty docker-chroot
+all: docker-run
 
-docker-ubuntu: docker-chroot
-	@sudo -E tar c -C docker-chroot . \
-		| docker import - docker.knewton.net/knewton/ubuntu:trusty
-	@docker tag \
-		docker.knewton.net/knewton/ubuntu:trusty \
-		docker.knewton.net/knewton/ubuntu
-
+# LIB DOCKER IMAGE: RUNTIME FOR THIS PROJECT ADDED ON TOP "UBUNTU"
 docker-lib:
-	@ln -sf ./etc/docker/lib/Dockerfile . \
-		&& docker build \
-			--tag=docker.knewton.net/knewton/check-graph:lib \
-			$(PWD)
+	@ln -sf ./etc/docker/lib/Dockerfile .
+	@docker build \
+		--tag=docker.knewton.net/knewton/check-graph:lib \
+		$(PWD)
 
+# DEV DOCKER IMAGE: DEV TOOLS FOR THIS PROJECT ADDED ON TOP "LIB"
 docker-dev:
-	@ln -sf ./etc/docker/dev/Dockerfile . \
-		&& docker build \
-			--rm=false \
-			--tag=docker.knewton.net/knewton/check-graph:dev \
-			$(PWD)
+	@ln -sf ./etc/docker/dev/Dockerfile .
+	@docker build \
+		--rm=false \
+		--tag=docker.knewton.net/knewton/check-graph:dev \
+		$(PWD)
 
+# BLD DOCKER IMAGE: BUILD/TEST THIS PROJECT ON TOP OUR "DEV" IMAGE
 docker-bld:
-	@ln -sf ./etc/docker/bld/Dockerfile . \
-		&& docker build \
-			--rm=false \
-			--tag=docker.knewton.net/knewton/check-graph:bld \
-			$(PWD)
+	@ln -sf ./etc/docker/bld/Dockerfile .
+	@docker build \
+		--rm=false \
+		--tag=docker.knewton.net/knewton/check-graph:bld \
+		$(PWD)
 
-docker-run: check-graph
-	@ln -sf ./etc/docker/run/Dockerfile . \
-		&& docker build \
-			--tag=docker.knewton.net/knewton/check-graph \
-			$(PWD)
-
+# EXTRACT BINARY: COPY THE BINARY EXE FROM OUR PROJECT "BLD" IMAGE
 check-graph: docker-bld
 	@docker run \
-		--volume=$(PWD):/host \
+		--volume=$(TMP):/host \
 		docker.knewton.net/knewton/check-graph:bld \
 		cp /usr/local/bin/check-graph /host/
+	@cp $(TMP)/check-graph .
+
+# RUN DOCKER IMAGE: ADD THE PROJECT'S BINARY ON TOP OUR "LIB" IMAGE
+docker-run: check-graph
+	@ln -sf ./etc/docker/run/Dockerfile .
+	@docker build \
+		--tag=docker.knewton.net/knewton/check-graph \
+		$(PWD)
 
 clean:
-	@sudo rm check-graph
-
-distclean: clean
-	@sudo rm -rf docker-chroot
+	@rm -f Dockerfile check-graph
 
 .PHONY: \
+	all \
 	clean \
-	distclean \
-	docker \
 	docker-bld \
 	docker-dev \
 	docker-lib \
-	docker-run \
-	docker-ubuntu
+	docker-run
+
+TMP := $(shell mktemp -d)
