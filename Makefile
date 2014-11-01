@@ -50,8 +50,6 @@ docker-run: check-graph
 		--tag=docker.knewton.net/knewton/check-graph \
 		$(PWD)
 
-docker: docker-run
-
 clean:
 	@rm -f Dockerfile check-graph
 
