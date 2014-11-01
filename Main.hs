@@ -18,13 +18,14 @@ import           System.Exit
 -- TYPES --
 -----------
 
-data Args = Args { argFallback :: String
-                 , argTimeout  :: Int
-                 , argURL      :: String
-                 , argTarget   :: String
-                 , argOperator :: String
-                 , argValue    :: Double
-                 , argMinutes  :: Int }
+data Args = Args { argErrNoData :: Bool
+                 , argFallback  :: String
+                 , argTimeout   :: Int
+                 , argURL       :: String
+                 , argTarget    :: String
+                 , argOperator  :: String
+                 , argValue     :: Double
+                 , argMinutes   :: Int }
           deriving (Show, Eq)
 
 data Metric = Metric { metricTarget     :: String
@@ -104,7 +105,10 @@ argsParserInfo =
 argsParser :: Parser Args
 argsParser =
   Args
-  <$> strOption ( short 'f'
+  <$> switch ( short 'e'
+               <> long "err-no-data"
+               <> help "Error on empty data set from Graphite" )
+  <*> strOption ( short 'f'
                   <> long "fallback"
                   <> metavar "URL"
                   <> value "http://grafana-api.knewton.net:8888" )
