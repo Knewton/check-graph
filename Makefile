@@ -15,7 +15,7 @@
 # |                                        |
 # +----------------------------------------+
 
-all: docker-run
+default: docker-run
 
 # LIB DOCKER IMAGE: RUNTIME FOR THIS PROJECT ADDED ON TOP "UBUNTU"
 docker-lib:
@@ -55,12 +55,15 @@ docker-run: check-graph
 		--tag=docker.knewton.net/knewton/check-graph \
 		$(PWD)
 
+docker: docker-run
+
 clean:
 	@rm -f Dockerfile check-graph
 
 .PHONY: \
-	all \
 	clean \
+	default \
+	docker \
 	docker-bld \
 	docker-dev \
 	docker-lib \
