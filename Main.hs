@@ -115,16 +115,23 @@ argsParser =
   <*> strOption ( short 'f'
                   <> long "fallback"
                   <> metavar "URL"
-                  <> value "http://grafana-api.knewton.net:8888" )
+                  <> value "http://grafana-api.knewton.net:8888"
+                  <> help "Fallback URL for Graphite metrics" )
   <*> option auto ( short 't'
                     <> long "timeout"
                     <> metavar "SECONDS"
-                    <> value 10 )
-  <*> argument str ( metavar "URL" )
-  <*> argument str ( metavar "TARGET" )
-  <*> argument str ( metavar "OPERATOR" )
-  <*> argument auto ( metavar "VALUE" )
-  <*> argument auto ( metavar "MINUTES" )
+                    <> value 10
+                    <> help "Seconds we'll wait for Graphite to respond" )
+  <*> argument str ( metavar "URL"
+                     <> help "Base URL for Graphite metrics" )
+  <*> argument str ( metavar "TARGET"
+                     <> help "Target metric to retrieve" )
+  <*> argument str ( metavar "OPERATOR"
+                     <> help "<, <=, ==, > or >=" )
+  <*> argument auto ( metavar "VALUE"
+                      <> help "Threshold value used in evaluation" )
+  <*> argument auto ( metavar "MINUTES"
+                      <> help "Window the proposition should be true" )
 
 operator :: forall a. Ord a => [Char] -> a -> a -> Bool
 operator "<"  = (<)
