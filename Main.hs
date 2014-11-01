@@ -70,8 +70,9 @@ checkMetrics args@(Args{..}) (Just metrics) = do
       putStrLn $ "OK: Graphite values that are present are OK"
       exitSuccess
     badMetrics -> do
-      putStrLn $ "CRITICAL: " ++
-        intercalate " " (map (L.toString . A.encode) badMetrics)
+      putStrLn $ "CRITICAL: ["
+        ++ intercalate "," (map (L.toString . A.encode) badMetrics)
+        ++ "]"
       exitWith $ ExitFailure 2
 
 errNoData :: forall a. Args -> IO a
