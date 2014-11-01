@@ -62,7 +62,9 @@ graphiteUrl url (Args{..}) =
   ++ "&from=-" ++ show argMinutes ++ "min&format=json"
 
 checkMetrics :: Args -> Maybe [Metric] -> IO ()
-checkMetrics args@(Args {..}) (Just metrics) = do
+checkMetrics args@(Args{..}) Nothing = errNoData args
+checkMetrics args@(Args{..}) (Just []) | argErrNoData = errNoData args
+checkMetrics args@(Args{..}) (Just metrics) = do
   case filter (badMetricMatch args) metrics of
     []         -> do
       putStrLn $ "OK: Graphite values that are present are OK"
@@ -71,7 +73,9 @@ checkMetrics args@(Args {..}) (Just metrics) = do
       putStrLn $ "CRITICAL: " ++
         intercalate " " (map (L.toString . A.encode) badMetrics)
       exitWith $ ExitFailure 2
-checkMetrics Args {..} Nothing = do
+
+errNoData :: forall a. Args -> IO a
+errNoData Args{..} = do
   putStrLn $ "CRITICAL: no data " ++ argTarget
   exitWith $ ExitFailure 2
 
