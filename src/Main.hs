@@ -18,13 +18,14 @@ import           System.Exit
 -- TYPES --
 -----------
 
-data Args = Args { argFallback :: String
-                 , argTimeout  :: Int
-                 , argURL      :: String
-                 , argTarget   :: String
-                 , argOperator :: String
-                 , argValue    :: Double
-                 , argMinutes  :: Int }
+data Args = Args { argErrNoData :: Bool
+                 , argFallback  :: String
+                 , argTimeout   :: Int
+                 , argURL       :: String
+                 , argTarget    :: String
+                 , argOperator  :: String
+                 , argValue     :: Double
+                 , argMinutes   :: Int }
           deriving (Show, Eq)
 
 data Metric = Metric { metricTarget     :: String
@@ -46,7 +47,7 @@ check :: Args -> IO ()
 check args = graphiteQuery args >>= checkMetrics args . A.decode
 
 graphiteQuery :: Args -> IO L.ByteString
-graphiteQuery args@(Args {..}) =
+graphiteQuery args@(Args{..}) =
   let query url = withManager defaultManagerSettings $ \ mgr -> do
         req <- parseUrl (graphiteUrl url args)
         httpLbs (req { responseTimeout = Just (argTimeout * 100000) }) mgr
@@ -56,21 +57,26 @@ graphiteQuery args@(Args {..}) =
   in handle oops $ query argURL
 
 graphiteUrl:: String -> Args -> String
-graphiteUrl url (Args{..}) =
+graphiteUrl url Args{..} =
   url ++ "/render/?target=" ++ argTarget
-  ++ "&from=-" ++ show argMinutes ++ "min&format=json"
+    ++ "&from=-" ++ show argMinutes ++ "min&format=json"
 
 checkMetrics :: Args -> Maybe [Metric] -> IO ()
-checkMetrics args@(Args {..}) (Just metrics) = do
+checkMetrics args@(Args{..}) Nothing = errNoData args
+checkMetrics args@(Args{..}) (Just []) | argErrNoData = errNoData args
+checkMetrics args@(Args{..}) (Just metrics) = do
   case filter (badMetricMatch args) metrics of
-    []         -> do
+    [] -> do
       putStrLn $ "OK: Graphite values that are present are OK"
       exitSuccess
     badMetrics -> do
-      putStrLn $ "CRITICAL: " ++
-        intercalate " " (map (L.toString . A.encode) badMetrics)
+      putStrLn $ "CRITICAL: ["
+        ++ intercalate "," (map (L.toString . A.encode) badMetrics)
+        ++ "]"
       exitWith $ ExitFailure 2
-checkMetrics Args {..} Nothing = do
+
+errNoData :: forall a. Args -> IO a
+errNoData Args{..} = do
   putStrLn $ "CRITICAL: no data " ++ argTarget
   exitWith $ ExitFailure 2
 
@@ -78,7 +84,7 @@ badMetricMatch :: Args -> Metric -> Bool
 badMetricMatch args = not . checkValues args . values . metricDatapoints
 
 checkValues :: Args -> [Double] -> Bool
-checkValues (Args {..}) = all (flip (operator argOperator) argValue)
+checkValues Args{..} = all (flip (operator argOperator) argValue)
 
 values :: [Datapoint] -> [Double]
 values = map (\(Datapoint (Just v) _) -> v) . filter noData
@@ -104,19 +110,29 @@ argsParserInfo =
 argsParser :: Parser Args
 argsParser =
   Args
-  <$> strOption ( short 'f'
+  <$> switch ( short 'e'
+               <> long "err-no-data"
+               <> help "Error on empty data set from Graphite" )
+  <*> strOption ( short 'f'
                   <> long "fallback"
                   <> metavar "URL"
-                  <> value "http://grafana-api.knewton.net:8888" )
+                  <> value "http://grafana-api.knewton.net:8888"
+                  <> help "Fallback URL for Graphite metrics" )
   <*> option auto ( short 't'
                     <> long "timeout"
                     <> metavar "SECONDS"
-                    <> value 10 )
-  <*> argument str ( metavar "URL" )
-  <*> argument str ( metavar "TARGET" )
-  <*> argument str ( metavar "OPERATOR" )
-  <*> argument auto ( metavar "VALUE" )
-  <*> argument auto ( metavar "MINUTES" )
+                    <> value 10
+                    <> help "Seconds we'll wait for Graphite to respond" )
+  <*> argument str ( metavar "URL"
+                     <> help "Base URL for Graphite metrics" )
+  <*> argument str ( metavar "TARGET"
+                     <> help "Target metric to retrieve" )
+  <*> argument str ( metavar "OPERATOR"
+                     <> help "<, <=, ==, > or >=" )
+  <*> argument auto ( metavar "VALUE"
+                      <> help "Threshold value used in evaluation" )
+  <*> argument auto ( metavar "MINUTES"
+                      <> help "Window the proposition should be true" )
 
 operator :: forall a. Ord a => [Char] -> a -> a -> Bool
 operator "<"  = (<)
