@@ -47,7 +47,7 @@ check :: Args -> IO ()
 check args = graphiteQuery args >>= checkMetrics args . A.decode
 
 graphiteQuery :: Args -> IO L.ByteString
-graphiteQuery args@(Args {..}) =
+graphiteQuery args@(Args{..}) =
   let query url = withManager defaultManagerSettings $ \ mgr -> do
         req <- parseUrl (graphiteUrl url args)
         httpLbs (req { responseTimeout = Just (argTimeout * 100000) }) mgr
@@ -57,16 +57,16 @@ graphiteQuery args@(Args {..}) =
   in handle oops $ query argURL
 
 graphiteUrl:: String -> Args -> String
-graphiteUrl url (Args{..}) =
+graphiteUrl url Args{..} =
   url ++ "/render/?target=" ++ argTarget
-  ++ "&from=-" ++ show argMinutes ++ "min&format=json"
+    ++ "&from=-" ++ show argMinutes ++ "min&format=json"
 
 checkMetrics :: Args -> Maybe [Metric] -> IO ()
 checkMetrics args@(Args{..}) Nothing = errNoData args
 checkMetrics args@(Args{..}) (Just []) | argErrNoData = errNoData args
 checkMetrics args@(Args{..}) (Just metrics) = do
   case filter (badMetricMatch args) metrics of
-    []         -> do
+    [] -> do
       putStrLn $ "OK: Graphite values that are present are OK"
       exitSuccess
     badMetrics -> do
@@ -83,7 +83,7 @@ badMetricMatch :: Args -> Metric -> Bool
 badMetricMatch args = not . checkValues args . values . metricDatapoints
 
 checkValues :: Args -> [Double] -> Bool
-checkValues (Args {..}) = all (flip (operator argOperator) argValue)
+checkValues Args{..} = all (flip (operator argOperator) argValue)
 
 values :: [Datapoint] -> [Double]
 values = map (\(Datapoint (Just v) _) -> v) . filter noData
