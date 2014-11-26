@@ -10,6 +10,7 @@ import qualified Data.ByteString.Lazy      as L
 import qualified Data.ByteString.Lazy.UTF8 as L
 import           Data.Char
 import           Data.List
+import           Data.Maybe
 import           Network.HTTP.Client
 import           Options.Applicative
 import           System.Exit
@@ -64,10 +65,20 @@ graphiteUrl url Args{..} =
 checkMetrics :: Args -> Maybe [Metric] -> IO ()
 checkMetrics args@(Args{..}) Nothing = errNoData args
 checkMetrics args@(Args{..}) (Just []) | argErrNoData = errNoData args
+checkMetrics args@(Args{..}) (Just []) = do
+  putStrLn "OK: There's no data but flag --err-no-data is not set"
 checkMetrics args@(Args{..}) (Just metrics) = do
+  let realData = map (values . metricDatapoints) metrics
+      maxDatapointListSize =
+        foldl (\acc xs -> if length xs > acc
+                          then length xs
+                          else acc) 0 realData
   case filter (badMetricMatch args) metrics of
     [] -> do
-      putStrLn $ "OK: Graphite values that are present are OK"
+      putStrLn $ "OK: " ++ show maxDatapointListSize
+        ++ " present datapoints are " ++ argOperator
+        ++ " " ++ show argValue
+        ++ " (most recent datapoint is " ++ show (last . last $ realData) ++ ")"
       exitSuccess
     badMetrics -> do
       putStrLn $ "CRITICAL: ["
