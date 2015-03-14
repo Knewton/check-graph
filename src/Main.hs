@@ -6,11 +6,9 @@
 import           Control.Exception.Lifted
 import qualified Data.Aeson                as A
 import           Data.Aeson.TH
-import qualified Data.ByteString.Lazy      as L
 import qualified Data.ByteString.Lazy.UTF8 as L
 import           Data.Char
 import           Data.List
-import           Data.Maybe
 import           Data.Time.Clock.POSIX
 import           Data.Time.Format
 import           Network.HTTP.Client
