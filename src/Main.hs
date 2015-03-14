@@ -67,30 +67,43 @@ graphiteUrl url Args{..} =
 checkMetrics :: Args -> Maybe [Metric] -> IO ()
 checkMetrics args@(Args{..}) Nothing = errNoData args
 checkMetrics args@(Args{..}) (Just []) | argErrNoData = errNoData args
-checkMetrics _args@(Args{..}) (Just []) = do
-  putStrLn "OK: There's no data but flag --err-no-data is not set"
+checkMetrics args@(Args{..}) (Just []) | argErrNoData = errNoData args
+checkMetrics args@(Args{..}) (Just []) = exitNoData args
 checkMetrics args@(Args{..}) (Just metrics) = do
   let realData = map (values . metricDatapoints) metrics
       maxDatapointListSize =
         foldl (\acc xs -> if length xs > acc
                           then length xs
                           else acc) 0 realData
-  case filter (badMetricMatch args) metrics of
-    [] -> do
-      putStrLn $ "OK: " ++ show maxDatapointListSize
-        ++ " present datapoints are " ++ argOperator
-        ++ " " ++ show argValue ++ show metrics
-        ++ " (most recent datapoint is " ++ show (last . last $ realData) ++ ")"
-      exitSuccess
-    badMetrics -> do
-      putStrLn $ "CRITICAL: " ++ show argTarget ++ " has bad values:\n  "
-        ++ intercalate "," (map show (map prettyPoints badMetrics))
-      exitWith $ ExitFailure 2
+
+  -- Catch situation where there are timestamps but no values. I don't know how
+  -- this happens inside graphite
+  case realData of
+    [] | argErrNoData -> errNoData args
+    [] -> exitNoData args
+    [[]] | argErrNoData -> errNoData args
+    [[]] -> exitNoData args
+    _ -> case filter (badMetricMatch args) metrics of
+          [] -> do
+            putStrLn $ "OK: " ++ show maxDatapointListSize
+              ++ " present datapoints are " ++ argOperator
+              ++ " " ++ show argValue
+              ++ " (most recent datapoint is " ++ show (last . last $ realData) ++ ")"
+            exitSuccess
+          badMetrics -> do
+            putStrLn $ "CRITICAL: " ++ show argTarget ++ " has bad values:\n  "
+              ++ intercalate "," (map show (map prettyPoints badMetrics))
+            exitWith $ ExitFailure 2
 
 errNoData :: forall a. Args -> IO a
 errNoData Args{..} = do
   putStrLn $ "CRITICAL: no data " ++ argTarget
   exitWith $ ExitFailure 2
+
+exitNoData :: forall a. Args -> IO a
+exitNoData Args{..} = do
+  putStrLn $ "OK: No data but flag --err-no-data is not set. For '" ++ argTarget ++ "'"
+  exitSuccess
 
 badMetricMatch :: Args -> Metric -> Bool
 badMetricMatch args = not . checkValues args . values . metricDatapoints
