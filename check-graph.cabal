@@ -21,5 +21,7 @@ executable              check-graph
                       , http-client
                       , lifted-base
                       , optparse-applicative == 0.10.0
+                      , old-locale
+                      , time
                       , transformers
                       , utf8-string

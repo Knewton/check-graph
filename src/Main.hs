@@ -11,9 +11,12 @@ import qualified Data.ByteString.Lazy.UTF8 as L
 import           Data.Char
 import           Data.List
 import           Data.Maybe
+import           Data.Time.Clock.POSIX
+import           Data.Time.Format
 import           Network.HTTP.Client
 import           Options.Applicative
 import           System.Exit
+import           System.Locale
 
 -----------
 -- TYPES --
@@ -35,7 +38,8 @@ data Metric = Metric { metricTarget     :: String
 
 data Datapoint = Datapoint (Maybe Double) Integer
                deriving (Show, Eq)
-
+data Val = Val Double String
+               deriving (Show, Eq)
 -- JSON
 $( deriveJSON defaultOptions { fieldLabelModifier = (map toLower) . drop 6 } ''Metric )
 $( deriveJSON defaultOptions ''Datapoint )
@@ -65,7 +69,7 @@ graphiteUrl url Args{..} =
 checkMetrics :: Args -> Maybe [Metric] -> IO ()
 checkMetrics args@(Args{..}) Nothing = errNoData args
 checkMetrics args@(Args{..}) (Just []) | argErrNoData = errNoData args
-checkMetrics args@(Args{..}) (Just []) = do
+checkMetrics _args@(Args{..}) (Just []) = do
   putStrLn "OK: There's no data but flag --err-no-data is not set"
 checkMetrics args@(Args{..}) (Just metrics) = do
   let realData = map (values . metricDatapoints) metrics
@@ -77,13 +81,12 @@ checkMetrics args@(Args{..}) (Just metrics) = do
     [] -> do
       putStrLn $ "OK: " ++ show maxDatapointListSize
         ++ " present datapoints are " ++ argOperator
-        ++ " " ++ show argValue
+        ++ " " ++ show argValue ++ show metrics
         ++ " (most recent datapoint is " ++ show (last . last $ realData) ++ ")"
       exitSuccess
     badMetrics -> do
-      putStrLn $ "CRITICAL: ["
-        ++ intercalate "," (map (L.toString . A.encode) badMetrics)
-        ++ "]"
+      putStrLn $ "CRITICAL: " ++ show argTarget ++ " has bad values:\n  "
+        ++ intercalate "," (map show (map prettyPoints badMetrics))
       exitWith $ ExitFailure 2
 
 errNoData :: forall a. Args -> IO a
@@ -99,6 +102,17 @@ checkValues Args{..} = all (flip (operator argOperator) argValue)
 
 values :: [Datapoint] -> [Double]
 values = map (\(Datapoint (Just v) _) -> v) . filter noData
+
+prettyPoints :: Metric -> [Val]
+prettyPoints Metric { metricTarget = _a , metricDatapoints = datapoints } = pretty datapoints
+
+pretty :: [Datapoint] -> [Val]
+pretty = map (\(Datapoint (Just v) t) ->
+    Val v (timeToStr t) )
+      . filter noData
+
+timeToStr :: Integer -> String
+timeToStr t = formatTime defaultTimeLocale "%F %TZ" (posixSecondsToUTCTime $ fromIntegral t)
 
 noData :: Datapoint -> Bool
 noData (Datapoint Nothing _) = False
