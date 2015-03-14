@@ -20,6 +20,6 @@ executable              check-graph
                       , bytestring
                       , http-client
                       , lifted-base
-                      , optparse-applicative
+                      , optparse-applicative == 0.10.0
                       , transformers
                       , utf8-string
