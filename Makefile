@@ -10,7 +10,22 @@
 # |              UBUNTU IMAGE              |
 # +----------------------------------------+
 
-default: docker-run
+default: ubuntu-deb
+
+bin = dist/build/check-graph/check-graph
+version = 0.4.2
+
+linux-bin: $(bin)
+
+# vagrant up --provision is not working (version 1.6.3)
+$(bin): src/Main.hs
+	vagrant up --provision
+	vagrant provision
+
+ubuntu-deb: check-graph_$(version)_amd64.deb
+
+check-graph_$(version)_amd64.deb: $(bin)
+	./make-ubuntu64.sh $(version)
 
 # LIB DOCKER IMAGE: RUNTIME FOR THIS PROJECT ADDED ON TOP "UBUNTU"
 docker-lib:
@@ -60,6 +75,8 @@ clean:
 	docker-bld \
 	docker-dev \
 	docker-lib \
-	docker-run
+	docker-run \
+	ubuntu-deb \
+	linux-bin
 
 TMP := $(shell mktemp -d)
