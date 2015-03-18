@@ -91,8 +91,10 @@ checkMetrics args@(Args{..}) (Just metrics) = do
               ++ " (most recent datapoint is " ++ show (last . last $ realData) ++ ")"
             exitSuccess
           badMetrics -> do
-            putStrLn $ "CRITICAL: " ++ show argTarget ++ " has bad values:\n  "
-              ++ intercalate "," (map show (map prettyPoints badMetrics))
+            putStrLn $ "CRITICAL: " ++ resolveTarget (badMetrics !! 0) ++
+              " has values that are not " ++
+              argOperator ++ " " ++ show argValue ++ ":\n  " ++
+               intercalate "," (map show (map prettyPoints badMetrics))
             exitWith $ ExitFailure 2
 
 errNoData :: forall a. Args -> IO a
@@ -116,6 +118,9 @@ values = map (\(Datapoint (Just v) _) -> v) . filter noData
 
 prettyPoints :: Metric -> [Val]
 prettyPoints Metric { metricTarget = _a , metricDatapoints = datapoints } = pretty datapoints
+
+resolveTarget :: Metric -> String
+resolveTarget Metric { metricTarget = t , metricDatapoints = _ } = t
 
 pretty :: [Datapoint] -> [Val]
 pretty = map (\(Datapoint (Just v) t) ->
