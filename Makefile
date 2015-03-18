@@ -13,7 +13,7 @@
 default: ubuntu-deb
 
 bin = dist/build/check-graph/check-graph
-version = 0.4.2
+version = 0.4.3
 
 linux-bin: $(bin)
 
