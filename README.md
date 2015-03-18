@@ -1,6 +1,17 @@
-# Build Binaries (x86_64 Executable & Docker Image)
+# Build
+
+## Build Linux amd64 executable and deb package
+
+Requires vagrant and fpm:
 
     make
+
+If you want to bump the version you should adjust the version values in both
+check-graph.cabal and the Makefile.
+
+## Build Docker container
+
+    make docker-run
 
 ## Runtime Dependencies
 
@@ -15,6 +26,28 @@
     libc.so.6 => /lib/x86_64-linux-gnu/libc.so.6 (0x00007f037e8e1000)
     /lib64/ld-linux-x86-64.so.2 (0x00007f037fa52000)
 
-## Install Runtime Dependencies
+# Upload to S3 apt repo
 
-    sudo apt-get install -y libgmp10
+Requires deb-s3
+
+    deb-s3 upload -a amd64 --bucket knewton-apt check-graph_0.4.2_amd64.deb
+
+The `knewton-apt` bucket is in the VPC account.
+
+# Install
+
+## Ubuntu
+
+Add our apt repo, then:
+
+    sudo apt-get install check-graph
+
+You can also scp the deb package somewhere, run:
+
+    sudo dpkg -i check-graph_0.4.2_amd64.deb
+
+The first install might fail and register some packages as dependencies, which
+will then be installed if you do:
+
+    sudo apt-get install -f
+    sudo dpkg -i check-graph_0.4.2_amd64.deb
