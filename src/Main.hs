@@ -20,7 +20,8 @@ import           System.Locale
 -- TYPES --
 -----------
 
-data Args = Args { argErrNoData :: Bool
+data Args = Args { argNoDataCrit :: Bool
+                 , argNoDataOk  :: Bool
                  , argFallback  :: String
                  , argTimeout   :: Int
                  , argURL       :: String
@@ -66,8 +67,8 @@ graphiteUrl url Args{..} =
 
 checkMetrics :: Args -> Maybe [Metric] -> IO ()
 checkMetrics args@(Args{..}) Nothing = errNoData args
-checkMetrics args@(Args{..}) (Just []) | argErrNoData = errNoData args
-checkMetrics args@(Args{..}) (Just []) | argErrNoData = errNoData args
+checkMetrics args@(Args{..}) (Just []) | argNoDataCrit = errNoData args
+checkMetrics args@(Args{..}) (Just []) | argNoDataCrit = errNoData args
 checkMetrics args@(Args{..}) (Just []) = exitNoData args
 checkMetrics args@(Args{..}) (Just metrics) = do
   let realData = map (values . metricDatapoints) metrics
@@ -79,9 +80,9 @@ checkMetrics args@(Args{..}) (Just metrics) = do
   -- Catch situation where there are timestamps but no values. I don't know how
   -- this happens inside graphite
   case realData of
-    [] | argErrNoData -> errNoData args
+    [] | argNoDataCrit -> errNoData args
     [] -> exitNoData args
-    [[]] | argErrNoData -> errNoData args
+    [[]] | argNoDataCrit -> errNoData args
     [[]] -> exitNoData args
     _ -> case filter (badMetricMatch args) metrics of
           [] -> do
@@ -103,9 +104,14 @@ errNoData Args{..} = do
   exitWith $ ExitFailure 2
 
 exitNoData :: forall a. Args -> IO a
-exitNoData Args{..} = do
-  putStrLn $ "OK: No data but flag --err-no-data is not set. For '" ++ argTarget ++ "'"
-  exitSuccess
+exitNoData Args{..} =
+  if argNoDataOk
+  then exitSuccess
+  else do
+    putStrLn $ "WARNING: Graphite returned no data for the last " ++ show argMinutes ++
+      " minutes of '" ++ argTarget ++ "'\n" ++
+      "Use `--no-data-crit` to make this alert, or --no-data-ok to silence this warning. "
+    exitWith $ ExitFailure 1
 
 badMetricMatch :: Args -> Metric -> Bool
 badMetricMatch args = not . checkValues args . values . metricDatapoints
@@ -151,9 +157,10 @@ argsParserInfo =
 argsParser :: Parser Args
 argsParser =
   Args
-  <$> switch ( short 'e'
-               <> long "err-no-data"
+  <$> switch ( long "no-data-crit"
                <> help "Error on empty data set from Graphite" )
+  <*> switch ( long "no-data-ok"
+               <> help "No warning when graphite returns no data" )
   <*> strOption ( short 'f'
                   <> long "fallback"
                   <> metavar "URL"
@@ -173,7 +180,7 @@ argsParser =
   <*> argument auto ( metavar "VALUE"
                       <> help "Threshold value used in evaluation" )
   <*> argument auto ( metavar "MINUTES"
-                      <> help "Window the proposition should be true" )
+                      <> help "Time window the proposition must be true throughout." )
 
 operator :: forall a. Ord a => [Char] -> a -> a -> Bool
 operator "<"  = (<)
