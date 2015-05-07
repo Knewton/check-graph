@@ -134,7 +134,7 @@ pretty = map (\(Datapoint (Just v) t) ->
       . filter noData
 
 timeToStr :: Integer -> String
-timeToStr t = formatTime defaultTimeLocale "%F %TZ" (posixSecondsToUTCTime $ fromIntegral t)
+timeToStr t = formatTime defaultTimeLocale "%TZ" (posixSecondsToUTCTime $ fromIntegral t)
 
 noData :: Datapoint -> Bool
 noData (Datapoint Nothing _) = False
